@@ -1,22 +1,3 @@
-#!/usr/bin/env python3
-"""
-Mega Simulation for Advanced Network Load Balancing
-
-Features incorporated:
-1. Q–learning / Multi–armed bandit for updating bidding sensitivity.
-2. Dynamic bid adjustment using a dummy neural network predictor.
-3. Risk–sensitive bidding: bids are adjusted by a risk–aversion factor.
-4. Extended task characteristics: SLA level, complexity, latency.
-5. Non–stationary task arrival (sinusoidally varying average).
-6. Adaptive reserve price in the auctioneer.
-7. Coalition formation: overloaded servers in the same coalition may offload half a task.
-8. Fairness and social welfare metrics.
-9. Decentralized (blockchain–style) auction logging.
-
-Note: This is a prototype. In practice, you may wish to replace the dummy neural predictor with a true NN,
-refine learning updates, and modularize the code.
-"""
-
 import random
 import logging
 import matplotlib.pyplot as plt
@@ -448,22 +429,25 @@ def simulate_network(num_servers: int = 5,
                      num_rounds: int = 150,
                      base_tasks_per_round: float = 3.0,
                      processing_rate: float = 5.0,
-                     random_seed: int = 42,
+                     random_seed: int = 75,
                      learning_mode: str = "continuous",  # Options: "continuous", "q-learning", "bandit"
                      agent_params: dict = None,
                      neural_bid_enabled: bool = False,
                      decentralized_auction: bool = False,
-                     num_coalitions: int = 2):
+                     num_coalitions: int = 9): # was set to 9
     random.seed(random_seed)
     np.random.seed(random_seed)
 
     # Initialize servers.
     servers = []
+    
+    ##### -----  Choose between random or predefined constraints -------
+    '''
     for i in range(num_servers):
-        capacity = random.uniform(50, 100)
-        sensitivity = random.uniform(0.5, 2.0)
-        risk_aversion = random.uniform(0, 0.5)
-        coalition_id = random.randint(0, num_coalitions - 1)
+        capacity = 100
+        sensitivity = 1.5
+        risk_aversion = 0.25
+        coalition_id = 5
         server = Server(
             id=i,
             capacity=capacity,
@@ -479,7 +463,32 @@ def simulate_network(num_servers: int = 5,
         servers.append(server)
         logging.info(f"Initialized Server {i}: capacity {capacity:.2f}, sensitivity {sensitivity:.2f}, "
                      f"risk_aversion {risk_aversion:.2f}, coalition_id {coalition_id}, learning_mode {learning_mode}")
-
+    
+    
+    
+    '''
+    #### ------ Random servers -----
+    for i in range(num_servers):
+        capacity = random.uniform(50, 10000) # was 50, 100
+        sensitivity = random.uniform(0.5, 2.0) # was 0.5, 2.0
+        risk_aversion = random.uniform(0, 1) # was 0, 0.5
+        coalition_id = random.randint(0, num_coalitions - 1)
+        server = Server(
+            id=i,
+            capacity=capacity,
+            sensitivity=sensitivity,
+            target_load_ratio=0.5,
+            learning_rate=0.1, 
+            learning_mode=learning_mode,
+            agent_params=agent_params,
+            neural_bid_enabled=neural_bid_enabled,
+            risk_aversion=risk_aversion,
+            coalition_id=coalition_id
+        )
+        servers.append(server)
+        logging.info(f"Initialized Server {i}: capacity {capacity:.2f}, sensitivity {sensitivity:.2f}, "
+                     f"risk_aversion {risk_aversion:.2f}, coalition_id {coalition_id}, learning_mode {learning_mode}")
+    
     if decentralized_auction:
         auctioneer = Auctioneer(reserve_threshold=25.0, decentralized=True)
     else:
@@ -682,7 +691,7 @@ def plot_metrics(metrics):
 
     # Adjust layout and save the figure.
     plt.tight_layout()
-    save_path = './backend/static/simulation_summary.png'
+    save_path = './static/simulation_summary.png'
     plt.savefig(save_path)
     print(f"Figure saved to '{save_path}' in directory: {os.getcwd()}")
 
@@ -695,9 +704,9 @@ def plot_metrics(metrics):
 # 8. Main: Run the simulation.
 ###############################################################################
 def main():
-    NUM_SERVERS = 5
-    NUM_ROUNDS = 150
-    BASE_TASKS_PER_ROUND = 3.0
+    NUM_SERVERS = 7
+    NUM_ROUNDS = 150 # was 150
+    BASE_TASKS_PER_ROUND = 5.0
     PROCESSING_RATE = 5.0
 
     # Choose learning mode: "continuous", "q-learning", or "bandit"
