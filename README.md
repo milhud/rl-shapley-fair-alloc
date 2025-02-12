@@ -28,7 +28,7 @@
 
 Modern network systems face the challenge of balancing load among a variety of servers, each with different capacities and dynamic workloads. Traditional static methods often fall short when tasks arrive unpredictably, server capacities vary, and task requirements differ. 
 
-Our **Mega Simulation for Advanced Network Load Balancing** leverages modern techniques—particularly in machine learning and game theory—to adapt and respond to these challenges. Key components include:
+This **Mega Simulation for Advanced Network Load Balancing** leverages modern techniques—particularly in machine learning and game theory—to adapt and respond to these challenges. Key components include:
 
 - **Reinforcement Learning** using Q-learning and multi-armed bandits to adjust server bidding behavior dynamically.
 - **Deep Q-Networks (DQN)** to fine-tune bid adjustments via neural networks.
@@ -42,7 +42,7 @@ In the sections that follow, we’ll explain these concepts in detail, with a pa
 
 ## 2. System Overview
 
-Our simulation is built from several interdependent modules. Let’s walk through each, with extra focus on the learning components and fairness concepts.
+This simulation is built from several interdependent modules. Let’s walk through each, with extra focus on the learning components and fairness concepts.
 
 ### Learning Agents
 
@@ -88,7 +88,7 @@ where:
 - **$r$** is the reward received after taking action $a$.
 
 *Why Multi-Armed Bandits Help:*  
-This method is computationally simpler than full Q-learning because it doesn’t maintain a full state-action table. It’s particularly useful when the environment is relatively static in the sense that the context does not change dramatically from one decision to the next. In our simulation, this allows servers to quickly adjust their actions based solely on average observed rewards.
+This method is computationally simpler than full Q-learning because it doesn’t maintain a full state-action table. It’s particularly useful when the environment is relatively static in the sense that the context does not change dramatically from one decision to the next. In this simulation, this allows servers to quickly adjust their actions based solely on average observed rewards.
 
 *Example Code Snippet:*
 
@@ -151,7 +151,7 @@ Although simple, this model can be seen as a precursor to more sophisticated pre
 
 ### Server Module
 
-Each **Server** in our simulation:
+Each **Server** in this simulation:
 - **Bids for Tasks:** Using both deterministic components (like current load) and adaptive adjustments via learning agents.
 - **Processes Tasks:** Updating its load after being assigned work.
 - **Adjusts Strategy:** By using learning methods to change its bidding sensitivity.
@@ -230,7 +230,7 @@ The Shapley value is a concept from cooperative game theory that ensures fairnes
 Where:
 - **$\Pi$:** The set of all possible orders in which servers can join a coalition.
 - **$S$:** A subset of servers that precede server $i$ in the order.
-- **$v(S)$:** The value of coalition $S$, which in our case might be defined as the sum of spare capacities:
+- **$v(S)$:** The value of coalition $S$, which in this case might be defined as the sum of spare capacities:
   
   ```math
   v(\text{coalition}) = \sum_{s \in \text{coalition}} (\text{capacity}_s - \text{current\_load}_s)
