@@ -19,9 +19,9 @@ Here is a brief explanation of the core concepts behind this program:
 
 - **Server Setup:**  
   Each server is initialized with:
-  - A **capacity** (maximum workload it can handle)
-  - A **sensitivity** value (affects how aggressively it bids)
-  - A **risk aversion** parameter (influences bid adjustments when nearing overload)
+  - A capacity (maximum workload it can handle)
+  - A sensitivity value (affects how aggressively it bids)
+  - A risk aversion parameter (influences bid adjustments when nearing overload)
 
 - **Auctioneer Module:**  
   An auctioneer is created to manage the bidding process, including maintaining a **reserve threshold** which is updated after each round.
