@@ -8,27 +8,39 @@ interface Server {
 }
 
 const App: React.FC = () => {
-  // State for number of servers
+
+  // state for number of servers
   const [numServers, setNumServers] = useState<number>(1);
-  // State for the servers array (each server holds id, capacity, sensitivity)
+  
+  // state for the servers array (each server has id, capacity, sensitivity)
   const [servers, setServers] = useState<Server[]>([]);
-  // Console output text
-  const [output, setOutput] = useState<string>('');
-  // State for task submission data
-  const [task, setTask] = useState<{ id: number; load: number; complexity: string; size: string }>({
+  
+  // console output text
+  const [output, setOutput] = useState<string>("");
+
+  // state for task submission data
+  const [task, setTask] = useState<{
+    id: number;
+    load: number;
+    complexity: string;
+    size: string;
+  }>({
     id: 0,
     load: 0,
     complexity: "",
     size: "",
   });
-  // State for current server metrics (updated only after a successful update)
+  
+  // state for current server metrics (updated only after a successful update)
   const [currentMetrics, setCurrentMetrics] = useState<Server[]>([]);
-  // State for simulation image URL
+
+  // state for simulation image URL
   const [simulationImage, setSimulationImage] = useState<string | null>(null);
 
-  // When the number of servers changes, create a new server array.
+  // when the number of servers changes, create a new server array
   useEffect(() => {
-    // Create an array of length numServers with default values.
+
+    // create an array of length numServers with default values
     const newServers = Array.from({ length: numServers }, () => ({
       id: 0,
       capacity: 0,
@@ -37,9 +49,14 @@ const App: React.FC = () => {
     setServers(newServers);
   }, [numServers]);
 
-  // Handles changes to any server input field.
-  const handleServerChange = (index: number, field: keyof Server, value: string) => {
-    // If the field is empty, leave it as empty; otherwise, parse to number.
+  // Handles changes to any server input field
+  const handleServerChange = (
+    index: number,
+    field: keyof Server,
+    value: string
+  ) => {
+
+    // if the field is empty, leave it as empty; otherwise, parse to number
     const parsedValue =
       value === ""
         ? ""
@@ -51,12 +68,14 @@ const App: React.FC = () => {
     setServers(updatedServers);
   };
 
-  // Handles changes to the number of servers slider.
-  const handleServerCountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // handles changes to the number of servers slider
+  const handleServerCountChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     setNumServers(parseInt(event.target.value, 10));
   };
 
-  // Handles changes in the task input fields.
+  // handles changes in the task input fields
   const handleTaskChange = (field: keyof typeof task, value: string) => {
     setTask((prevTask) => ({
       ...prevTask,
@@ -71,7 +90,7 @@ const App: React.FC = () => {
     }));
   };
 
-  // Called when the Update Servers button is clicked.
+  // called when the Update Servers button is clicked
   const handleUpdateServers = async () => {
     setOutput("Updating servers...");
     try {
@@ -81,7 +100,8 @@ const App: React.FC = () => {
         body: JSON.stringify(servers),
       });
       if (response.ok) {
-        // We assume a successful update: update the current metrics to show the new server data.
+       
+        // assume a successful update -  update the current metrics to show the new server data.
         setCurrentMetrics(servers);
         setOutput("Servers successfully updated.");
       } else {
@@ -92,7 +112,7 @@ const App: React.FC = () => {
     }
   };
 
-  // Called when the Send Task button is clicked.
+  // called when the Send Task button is clicked
   const handleSendTask = async () => {
     setOutput("Sending task...");
     try {
@@ -112,14 +132,16 @@ const App: React.FC = () => {
     }
   };
 
-  // Called when the Run Simulation button is clicked.
+  // called when the Run Simulation button is clicked
   const handleRunSimulation = async () => {
     setOutput("Running simulation...");
-    setSimulationImage(null); // Clear any previous image.
+    setSimulationImage(null); // clear image
     try {
       const response = await fetch("http://localhost:5000/app/demonstration");
       if (response.ok) {
-        setSimulationImage("http://localhost:5000/static/simulation_summary.png");
+        setSimulationImage(
+          "http://localhost:5000/static/simulation_summary.png"
+        );
         setOutput("Simulation complete.");
       } else {
         setOutput("Error running simulation.");
@@ -131,7 +153,7 @@ const App: React.FC = () => {
 
   return (
     <div className="app">
-      {/* Left Column: Server Input and Update Servers */}
+      {/* left column with the server input and update servers */}
       <div className="left-column">
         <div className="server-controls">
           <label>Number of Servers</label>
@@ -152,21 +174,27 @@ const App: React.FC = () => {
                 type="number"
                 placeholder="Server ID (Integer)"
                 value={server.id === 0 ? "" : server.id}
-                onChange={(e) => handleServerChange(index, "id", e.target.value)}
+                onChange={(e) =>
+                  handleServerChange(index, "id", e.target.value)
+                }
               />
               <input
                 type="number"
                 step="0.1"
                 placeholder="Capacity (Float)"
                 value={server.capacity === 0 ? "" : server.capacity}
-                onChange={(e) => handleServerChange(index, "capacity", e.target.value)}
+                onChange={(e) =>
+                  handleServerChange(index, "capacity", e.target.value)
+                }
               />
               <input
                 type="number"
                 step="0.1"
                 placeholder="Sensitivity (Float)"
                 value={server.sensitivity === 0 ? "" : server.sensitivity}
-                onChange={(e) => handleServerChange(index, "sensitivity", e.target.value)}
+                onChange={(e) =>
+                  handleServerChange(index, "sensitivity", e.target.value)
+                }
               />
             </div>
           ))}
@@ -176,7 +204,7 @@ const App: React.FC = () => {
         </button>
       </div>
 
-      {/* Middle Column: Simulation and Displaying Current Metrics */}
+      {/* middle column - Simulation and displaying current metrics */}
       <div className="middle-column">
         <button className="blue-button" onClick={handleRunSimulation}>
           Run Demonstration
@@ -214,7 +242,7 @@ const App: React.FC = () => {
         </table>
       </div>
 
-      {/* Right Column: Task Submission */}
+      {/* right column - task submission */}
       <div className="right-column">
         <h2>Submit Task</h2>
         <div className="task-inputs">
@@ -243,25 +271,28 @@ const App: React.FC = () => {
             value={task.size}
             onChange={(e) => handleTaskChange("size", e.target.value)}
           />
-          <button className="blue-button task-submit-button task-inputs"  style={{ marginTop: "10px" }} onClick={handleSendTask}>
+          <button
+            className="blue-button task-submit-button task-inputs"
+            style={{ marginTop: "10px" }}
+            onClick={handleSendTask}
+          >
             Send Task
           </button>
         </div>
         <div className="output-box">
-        <h3>Console Output</h3>
-        <pre className="console-output">{output}</pre>
-      </div>
+          <h3>Console Output</h3>
+          <pre className="console-output">{output}</pre>
+        </div>
 
-      <a 
-        href="https://github.com/milhud/game-theoretic-load-balancer" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="blue-button"
-        style={{ marginTop: "15px" }}
-      >
-        HELP / INFO
-      </a>
-
+        <a
+          href="https://github.com/milhud/game-theoretic-load-balancer"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="blue-button"
+          style={{ marginTop: "15px" }}
+        >
+          HELP / INFO
+        </a>
       </div>
     </div>
   );
