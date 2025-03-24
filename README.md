@@ -91,10 +91,11 @@ Servers continuously refine their bidding strategies based on past outcomes thro
   
 - **Multi-Armed Bandit:**  
   For simpler, state-independent updates, a bandit approach is used:
+  
   ```math
   \text{value}_a \leftarrow \text{value}_a + \frac{1}{n_a} \left( r - \text{value}_a \right)
   ```
-  - \( n_a \) is the count of how many times action \( a \) has been selected.
+  - $\( n_a \)$ is the count of how many times action \( a \) has been selected.
 
 ### 6. Reserve Threshold Adjustment
 
