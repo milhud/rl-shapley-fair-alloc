@@ -1,116 +1,138 @@
-This is a proof of concept game-theoretic load balancer. To launch the frontend, cd into the frontend directory and run:
+# Reinforcement, Shapley, Fair Allocation Load Balancing - Game-Theoretic Load Balancer
 
-```
+This project implements a load balancer that uses auction-based task allocation combined with reinforcement learning and game-theoretic principles. Tasks are assigned to servers based on dynamically computed bids, with the system continuously adapting its parameters to balance loads efficiently.
+
+## Running the Program
+
+### Frontend
+Start the frontend with:
+```sh
+cd frontend
 npm start
 ```
 
-and for the backend, cd into the backend directory and run:
-
-```
+### Backend
+Start the backend with:
+```sh
+cd backend
 python api.py
 ```
 
-From the frontend, you can send tasks with different complexities, and the program will return the server in which the task is assigned. Additionally, you can choose to run a simulation with a predefined numbre of tasks being sent to a predefined number of servers.
+You can also run a simulation using:
+```sh
+python poc_simulation.py
+```
+This simulates sending a set number of tasks to a group of servers.
 
-Here is a brief explanation of the core concepts behind this program:
+## How the Program Works
 
-
-### 1. Initialization
-
-- **Server Setup:**  
-  Each server is initialized with:
-  - A capacity (maximum workload it can handle)
-  - A sensitivity value (affects how aggressively it bids)
-  - A risk aversion parameter (influences bid adjustments when nearing overload)
-
-- **Auctioneer Module:**  
-  An auctioneer is created to manage the bidding process, including maintaining a **reserve threshold** which is updated after each round.
+### 1. Server Initialization
+- **Servers** are created with:
+  - **Capacity** ($C$): Maximum workload.
+  - **Sensitivity** ($s$): Determines bid aggressiveness.
+  - **Risk Aversion** ($r$): Adjusts bids when near overload.
+- An **auctioneer** is set up to manage task assignments and update the reserve threshold.
 
 ### 2. Task Generation
+- **Tasks** arrive in rounds.
+- Each task has:
+  - **Load Demand** ($L_t$)
+  - **SLA Level** ($\lambda$)
+- Task arrival can be modeled by a function (e.g., sinusoidal):
 
-- **Dynamic Task Arrival:**  
-  Tasks are generated in rounds using a sinusoidal function. This simulates non-stationary workload conditions where the number of tasks varies over time.
-  
-- **Task Characteristics:**  
-  Each task includes parameters such as:
-  - **Load:** The amount of work required.
-  - **SLA Level:** Priority levels (e.g., gold, silver, bronze) that may influence bidding.
+$$
+N(t) = N_{\max} \cdot \sin(t)
+$$
 
-### 3. Bid Computation
+### 3. Bid Computation by Each Server
+Each server computes its bid in several steps:
 
-Each server computes a bid for incoming tasks through several stages:
+#### a. Calculate Load Ratio
+The load ratio indicates how busy a server is:
+  
+$$
+R = \min\left(\frac{L_{\text{current}}}{C},\, 1.0\right)
+$$
 
-- **Calculating the Load Ratio:**  
-  This represents how busy a server is relative to its capacity.  
-  ```math
-  \text{load ratio} = \min\left(\frac{\text{current\_load}}{\text{capacity}}, 1.0\right)
-  ```
+#### b. Compute Base Bid
+The base bid combines the server’s sensitivity, load ratio, and the task’s load:
   
-- **Computing the Base Bid:**  
-  The base bid is determined by the server's sensitivity, its current load, and the task's load.  
-  ```math
-  \text{base bid} = \text{sensitivity} \times \text{load ratio} + \text{task.load}
-  ```
+$$
+B_{\text{base}} = s \cdot R + L_t
+$$
+
+#### c. Apply Risk Adjustment
+To discourage overloaded servers from taking on extra tasks:
   
-- **Risk Adjustment:**  
-  To discourage overloaded servers from taking on more work, a risk factor is applied:  
-  ```math
-  \text{risk factor} = 1 + \text{risk\_aversion} \times \max\left(0, \text{load ratio} - \text{target load ratio}\right)
-  ```  
-  This yields an adjusted bid:
-  ```math
-  \text{adjusted bid} = \text{base bid} \times \text{risk factor}
-  ```
+$$
+F = 1 + r \cdot \max\left(0,\, R - R_{\text{target}}\right)
+$$
+
+Then, the adjusted bid is:
+
+$$
+B_{\text{adj}} = B_{\text{base}} \cdot F
+$$
+
+#### d. Final Bid Scaling & Clamping
+Finally, the bid is scaled by capacity and capped:
   
-- **Dampening and Clamping:**  
-  Finally, the bid is scaled based on capacity and clamped to a maximum value to prevent runaway bids:
-  ```math
-  \text{final bid} = \min\left( \text{bid} \times \left(1 + \frac{\text{capacity}}{200}\right), 1000 \right)
-  ```
+$$
+B_{\text{final}} = \min\left( B_{\text{adj}} \cdot \left(1 + \frac{C}{200}\right),\, 1000 \right)
+$$
 
 ### 4. Auction Process
-
-- **Reverse Auction Mechanism:**  
-  The auctioneer collects bids from all servers and selects the one with the lowest bid, using a second-price mechanism to promote truthful bidding.
-  
-- **Coalition Formation:**  
-  If a server is overloaded (i.e., its load ratio is too high), the system may form a coalition with another server. Fairness in splitting the workload is ensured with the calculated Shapley values.
+- **Reverse Auction:** All servers submit bids, and the server with the lowest bid wins.
+- **Second-Price Rule:** The winning bid is influenced by the second-lowest bid.
+- **Coalition Formation:** If a server is overloaded (i.e., $R > R_{\text{threshold}}$), it can form a coalition with another server, with load sharing determined using fairness metrics (like Shapley values*).
 
 ### 5. Learning and Updates
+Servers adapt their bidding strategies based on auction outcomes:
 
-Servers continuously refine their bidding strategies based on past outcomes through two main approaches:
-
-- **Q-Learning:**  
-  Each server maintains a Q-table that maps state-action pairs. The Q-learning update rule is:
-  ```math
-  Q(s, a) \leftarrow Q(s, a) + \alpha \left( r + \gamma \max_{a'} Q(s', a') - Q(s, a) \right)
-  ```
-  - $\( \alpha \)$ is the learning rate.
-  - $\( r \)$ is the reward (e.g., reduction in load mismatch).
-  - $\( \gamma \)$ is the discount factor.
+#### Q-Learning Update:
   
-- **Multi-Armed Bandit:**  
-  For simpler, state-independent updates, a bandit approach is used:
-  
-  ```math
-  \text{value}_a \leftarrow \text{value}_a + \frac{1}{n_a} \left( r - \text{value}_a \right)
-  ```
-  - $\( n_a \)$ is the count of how many times action \( a \) has been selected.
+$$
+Q(s, a) \leftarrow Q(s, a) + \alpha \left( r + \gamma \max_{a'} Q(s', a') - Q(s, a) \right)
+$$
 
-### 6. Reserve Threshold Adjustment
+- $\alpha$ is the learning rate.
+- $\gamma$ is the discount factor.
 
-After each auction round, the auctioneer updates the reserve threshold to reflect the current bidding environment:
-```math
-\text{reserve threshold} = 1.5 \times \text{average winning bid}
-```
+#### Multi-Armed Bandit Update:
 
-### 7. Post-Auction Processing
+$$
+V_a \leftarrow V_a + \frac{1}{n_a} \left( r - V_a \right)
+$$
 
-- Task Processing: 
-  Once tasks are assigned, servers process them, gradually reducing their load over time.
-  
-- Metrics Collection: 
-  The simulation collects data on server loads, bidding sensitivity changes, fairness (via standard deviation of loads), and overall social welfare. This helps in evaluating system performance and fairness in task distribution.
+- $n_a$ is the number of times action $a$ has been selected.
+
+### 6. Reserve Threshold Update
+After each round, the auctioneer updates the reserve threshold based on the winning bids:
+
+$$
+T_{\text{reserve}} = 1.5 \times \text{Average Winning Bid}
+$$
+
+### 7. Metrics & Evaluation
+The system collects metrics on:
+- **Load Distribution:** Standard deviation of server loads.
+- **Efficiency:** Task completion times.
+- **Fairness:** Measured by load sharing among servers.
 
 
-You can run poc_simulation.py to create a simulation, simulating sending an arbitrary amount of tasks to an arbitrary amount of servers.
+---
+*Shapley Values in Coalition Formation
+
+When a server is overloaded and forms a coalition with another server, Shapley values are used to fairly distribute the load based on each server's contribution. The Shapley value for a server $i$ is defined as:
+
+$$
+\phi_i = \frac{1}{n!}\sum_{\pi \in \Pi} \Bigl(v(S \cup \{i\}) - v(S)\Bigr)
+$$
+
+- $\phi_i$ is the Shapley value for server $i$.
+- $\Pi$ is the set of all possible orderings of the servers.
+- $S$ is the set of servers preceding server $i$ in a given ordering.
+- $v(S)$ is the value (e.g., spare capacity) of coalition $S$.
+- $n$ is the total number of servers.
+
+This calculates the average marginal contribution of server $i$ by considering all possible ways the servers can form a coalition. By averaging the incremental contributions, the Shapley value provides a fair share of the load for each server in the coalition.
